@@ -8,6 +8,7 @@ import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -25,5 +26,7 @@ public interface TodoService {
 	@PUT("/v1/todos")
 	Call<Envelope<Todo>> updateTodo(@Path("id") String id, @Body Todo todo);
 
+	@DELETE("/v1/todos/{id}")
+	Call<Envelope<Todo>> deleteTodo(@Path("id") int id);
 
 }

@@ -11,6 +11,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import com.hayankhrisna.kuis2_hayan.Application;
 import com.hayankhrisna.kuis2_hayan.Constant;
@@ -30,7 +31,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 
-public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTodoClickedListener {
+public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTodoClickedListener, TodoAdapter.OnTodoClickedDeletedListener {
 
     private RecyclerView todosRecyclerView;
     private Session session;
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTod
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(com.hayankhrisna.kuis2_hayan.activities.MainActivity.this, SaveTodoActivity.class);
+                Intent intent = new Intent(MainActivity.this, SaveTodoActivity.class);
                 intent.putExtra(Constant.KEY_REQUEST_CODE, Constant.ADD_TODO);
                 startActivityForResult(intent, Constant.ADD_TODO);
             }
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTod
         todosRecyclerView = findViewById(R.id.rv_todos);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         todosRecyclerView.setLayoutManager(layoutManager);
-        adapter = new TodoAdapter(this, this);
+        adapter = new TodoAdapter(this, this, this);
         todosRecyclerView.setAdapter(adapter);
         service = ServiceGenerator.createService(TodoService.class);
         loadTodos();
@@ -103,11 +104,22 @@ public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTod
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch(id){
+            case R.id.action_settings:
+
+                return true;
+            case R.id.action_logout:
+                session.removeSession();
+                Intent intent = new Intent(this, LoginActivity.class);
+                startActivity(intent);
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
 
-        return super.onOptionsItemSelected(item);
+
+
     }
 
     @Override
@@ -117,6 +129,10 @@ public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTod
         intent.putExtra(Constant.KEY_REQUEST_CODE, Constant.UPDATE_TODO);
         startActivityForResult(intent, Constant.UPDATE_TODO);
     }
+    @Override
+    public void onClickDeleted (Todo todo){
+        deleteTodo(todo);
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -124,5 +140,27 @@ public class MainActivity extends AppCompatActivity implements TodoAdapter.OnTod
         if (resultCode == RESULT_OK) {
             loadTodos();
         }
+    }
+
+    public void deleteTodo(Todo todo){
+        int id =todo.getId();
+        Call<Envelope<Todo>> deleteTodo = service.deleteTodo(id);
+        deleteTodo.enqueue(new Callback<Envelope<Todo>>() {
+            @Override
+            public void onResponse(Call<Envelope<Todo>> call, Response<Envelope<Todo>> response) {
+                if (response.code() == 200) {
+                    loadTodos();
+                }else{
+                    Toast.makeText(MainActivity.this,response.toString(),Toast.LENGTH_LONG).show();
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<Envelope<Todo>> call, Throwable t) {
+
+            }
+        });
+
     }
 }
